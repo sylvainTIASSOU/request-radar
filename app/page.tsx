@@ -1,101 +1,122 @@
+'use client';
 import Image from "next/image";
+import Link from "next/link";
+import * as Yup from "yup";
+import { useFormik } from "formik";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import LoadingComp from "@/components/LoadingComp";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { useToast } from "@/hooks/use-toast";
+import { Api } from "./api/Api";
+import { logIn } from "@/redux/features/auth-slice";
+import Cookies from "js-cookie";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { toast } = useToast()
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email(" Email invalide")
+        .required("Email est requis"),
+      password: Yup.string().required("mot de passe requis "),
+    }),
+    onSubmit: async (values) => {
+      console.log(values);
+      setLoading(true);
+      
+      const data = {
+        username: values.email, password: values.password
+      };
+      const response = await Api.createFormEncoded("login", data);
+
+     
+      console.log(response );
+      if(response.data && response.data.ok){
+        const auth = {
+          isAuth: true,
+          uid: response.data.user.id,
+          role: "",
+          
+          name: `${response.data.user.username}`,
+          
+        };
+        dispatch(logIn(auth));
+        const expireDate = new Date();
+        expireDate.setHours(expireDate.getHours() + 3); // Ajoute 3 heures à l'heure actuelle
+
+
+        Cookies.set('token', response.data.access_token, { expires: expireDate, path: '/' });
+        setLoading(false);
+        toast({
+          title: "Vous êtes connecté",
+          className: "bg-colorSecondary text-white fixed top-2 right-2 w-[420px] ",
+
+        })
+        router.push("/dashboard");
+    } else {
+      setLoading(false);
+      toast({
+        title: "Le mot de passe ou l'email sont incorrects",
+        variant: "destructive",
+        className: "text-white fixed top-2 right-2 w-[420px] ",
+
+      })
+    }
+    },
+  })
+  return (
+    <div className="h-screen flex 2xl:mx-[20rem]  gap-2 items-center content-center justify-center md:mx-32 mx-4">
+         {loading && <LoadingComp />}
+
+       <div className="w-full flex flex-col gap-2 relative bottom-10">
+       <div className="w-full block md:hidden">
+        <Image src="/images/computer-work-6.png" alt="logo" width={400} height={300} className="object-cover relative   block md:hidden" />
+      </div>
+
+
+        <h1 className="text-4xl font-bold">Connectez-vous à votre compte <span className="text-colorSecondary text-4xl">.</span> </h1>
+
+        <Link href={"/"} className="text-md font-light">Mot de Passe oublié <span className="text-colorSecondary text-3xl">.</span></Link>
+
+        <form onSubmit={formik.handleSubmit} className="w-full flex flex-col gap-4 mt-1 ">
+        <div>
+            <label htmlFor="email" className={formik.errors.email && formik.touched.email ? "text-red-500" : ""}>
+              {formik.errors.email && formik.touched.email ? formik.errors.email : "Votre Email"}
+
+            </label>
+            <Input type="email" name="email" value={formik.values.email} onChange={formik.handleChange} />
+          </div>
+
+          <div>
+            <label htmlFor="mot de passe" className={formik.errors.password && formik.touched.password ? "text-red-500" : ""}>
+              {formik.errors.password && formik.touched.password ? formik.errors.password : "Mot de Passe"}
+
+            </label>
+            <Input type="password" name="password" value={formik.values.password} onChange={formik.handleChange} />
+          </div>
+
+          <Button type="submit" size={"lg"} className="w-full font-bold bg-colorSecondary" >Se Connecter</Button>
+        </form>
+      </div>
+
+
+      <div className="w-full hidden md:block">
+        <Image src="/images/computer-work-6.png" alt="logo" width={400} height={300} className="object-cover relative  hidden md:block" />
+      </div>
+
+     
     </div>
   );
 }

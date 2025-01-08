@@ -33,7 +33,7 @@ export default function Home() {
       password: Yup.string().required("mot de passe requis "),
     }),
     onSubmit: async (values) => {
-      console.log(values);
+     
       setLoading(true);
       
       const data = {
@@ -42,7 +42,7 @@ export default function Home() {
       const response = await Api.createFormEncoded("login", data);
 
      
-      console.log(response );
+      
       if(response.data && response.data.ok){
         const auth = {
           isAuth: true,

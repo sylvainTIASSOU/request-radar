@@ -2,10 +2,9 @@
 
 
 export class Api {
-    static baseUrl = "http://127.0.0.1:8001";
-    //"https://console-api-hfgygmgqdefyamck.westeurope-01.azurewebsites.net";
-    //"http://127.0.0.1:8000";
-    //"https://urchin-comic-guppy.ngrok-free.app";
+    static baseUrl = "http://localhost:8001";
+    
+    //"https://request-radar-api.vercel.app";
     //
     //
 

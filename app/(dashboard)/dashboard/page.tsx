@@ -1,11 +1,3 @@
-//  TODO Graphique de volume de requêtes : Un graphique en courbes montrant les requêtes par minute.
-// TODO  Visualisation des taux de succès/erreur : Diagramme circulaire ou histogramme.
-// TODO Distribution des temps de réponse : Histogramme.
-// TODO Top 5 des endpoints : Classement ou graphique en barres.
-// TODO Statut de la limitation du taux : Jauge ou barre de progression.
-// TODO Tendances des erreurs : Graphique en courbes.
-// TODO Visualisation des erreurs : Diagramme circulaire ou histogramme.
-
 'use client';
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
@@ -105,15 +97,13 @@ export default function Dashboard() {
         };
 
         // Gérer la fermeture de la connexion
-        ws.onclose = () => {
-            setConnectionStatus("Disconnected");
-            console.log("WebSocket disconnected");
-        };
-
-        // Gérer les erreurs
         ws.onerror = (error) => {
-            setConnectionStatus("Error");
+            setConnectionStatus("Error: Unable to connect");
             console.error("WebSocket error:", error);
+        };
+        ws.onclose = (event) => {
+            setConnectionStatus(`Disconnected (code: ${event.code}, reason: ${event.reason})`);
+            console.warn("WebSocket closed:", event);
         };
 
         // Fermer la connexion lorsque le composant est démonté
@@ -158,29 +148,7 @@ export default function Dashboard() {
                     </p>
                 </div>
             )}
-            {/* <p>Status: {connectionStatus}</p>
-
-            {analyticsData ? (
-                <div>
-                    <h2>Analytics Data</h2>
-                    <p>Total Requests: {analyticsData.total_requests}</p>
-                    <p>Error Rate: {analyticsData.error_rate.toFixed(2)}</p>
-                    <p>Average Response Time: {analyticsData.average_response_time.toFixed(2)} ms</p>
-                    <p>Error Trends (last minute): {analyticsData.error_trends}</p>
-                    <h3>Top 5 Endpoints</h3>
-                    <ul>
-                        {analyticsData.top_endpoints.map(([endpoint, count]: any, index: number) => (
-                            <li key={index}>
-                                {endpoint}: {count} requests
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            ) : (
-                <p>Loading analytics data...</p>
-            )}
-
-             */}
+          
             <RateLimitStatus rateLimitUsage={rateLimitUsage} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
